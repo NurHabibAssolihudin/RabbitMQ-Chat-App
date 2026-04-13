@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>RabbitMQ Chat</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 420px;
+            height: 600px;
+            background: #111827;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            padding: 15px;
+            background: #1f2937;
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #374151;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .empty {
+            color: #64748b;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .msg {
+            padding: 10px 12px;
+            border-radius: 12px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+
+        .msg.incoming {
+            background: #1f2937;
+            align-self: flex-start;
+        }
+
+        .msg.outgoing {
+            background: #2563eb;
+            align-self: flex-end;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #374151;
+            background: #1f2937;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+            background: #0f172a;
+            color: white;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="header">
+        Messaging through RabbitMQ
+    </div>
+
+    <div id="messages" class="messages">
+        <div class="empty">No messages received yet</div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="message" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+<script>
+    const ws = new WebSocket("ws://localhost:8888/ws");
+
+    ws.onmessage = function(event) {
+        const messagesDiv = document.getElementById("messages");
+
+        const empty = messagesDiv.querySelector(".empty");
+        if (empty) empty.remove();
+
+        const msg = document.createElement("div");
+        msg.classList.add("msg", "incoming");
+        msg.textContent = event.data;
+
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    };
+
+    function sendMessage() {
+        const messageInput = document.getElementById("message");
+
+        if (!messageInput.value.trim()) return;
+
+        fetch("/send", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "message=" + encodeURIComponent(messageInput.value)
+        });
+
+        const messagesDiv = document.getElementById("messages");
+
+        const msg = document.createElement("div");
+        msg.classList.add("msg", "outgoing");
+        msg.textContent = messageInput.value;
+
+        messagesDiv.appendChild(msg);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        messageInput.value = "";
+    }
+</script>
+
+</body>
+</html>
