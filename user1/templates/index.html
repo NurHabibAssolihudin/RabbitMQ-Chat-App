@@ -1,167 +1,426 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>RabbitMQ Chat</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RabbitMQ Modern Chat</title>
     <style>
-        body {
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --msg-in: #334155;
+            --msg-out: #2563eb;
+            --radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            overflow: hidden;
         }
 
-        .chat-container {
-            width: 420px;
-            height: 600px;
-            background: #111827;
-            border-radius: 12px;
+        /* Container Utama */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: var(--panel-bg);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                border-radius: var(--radius);
+                height: 700px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .app-container {
+                height: 100vh;
+            }
+        }
+
+        /* Header */
+        .header {
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header .status {
+            font-size: 0.75rem;
+            color: #10b981;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .header .status::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            gap: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .login-screen svg {
+            width: 64px;
+            height: 64px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* Chat UI */
+        #chatUI {
+            flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .header {
-            padding: 15px;
-            background: #1f2937;
-            font-weight: bold;
-            text-align: center;
-            border-bottom: 1px solid #374151;
         }
 
         .messages {
             flex: 1;
-            padding: 15px;
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
+            scroll-behavior: smooth;
         }
 
-        .empty {
-            color: #64748b;
-            text-align: center;
-            margin-top: 20px;
+        /* Message Bubbles */
+        .msg-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 85%;
+            animation: slideUp 0.3s ease;
         }
 
-        .msg {
-            padding: 10px 12px;
-            border-radius: 12px;
-            max-width: 75%;
-            word-wrap: break-word;
+        .msg-wrapper.outgoing {
+            align-self: flex-end;
+            align-items: flex-end;
         }
 
-        .msg.incoming {
-            background: #1f2937;
+        .msg-wrapper.incoming {
             align-self: flex-start;
         }
 
-        .msg.outgoing {
-            background: #2563eb;
-            align-self: flex-end;
+        .sender-name {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 0 4px 4px 4px;
+            font-weight: 500;
         }
 
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        .incoming .bubble {
+            background: var(--msg-in);
+            color: var(--text-main);
+            border-bottom-left-radius: 4px;
+        }
+
+        .outgoing .bubble {
+            background: var(--msg-out);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Input Area */
         .input-area {
+            padding: 15px 20px;
+            background: rgba(15, 23, 42, 0.5);
             display: flex;
-            padding: 10px;
-            border-top: 1px solid #374151;
-            background: #1f2937;
+            gap: 12px;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         input {
             flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            outline: none;
             background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            border-radius: 25px;
             color: white;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
         button {
-            margin-left: 10px;
-            padding: 10px 14px;
-            border: none;
-            border-radius: 8px;
-            background: #2563eb;
+            background: var(--primary);
             color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button:hover {
-            background: #1d4ed8;
+            background: var(--primary-hover);
+            transform: translateY(-1px);
         }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .hidden { display: none !important; }
+
+        /* Custom Scrollbar */
+        .messages::-webkit-scrollbar {
+            width: 5px;
+        }
+        .messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
     </style>
 </head>
-
 <body>
 
-<div class="chat-container">
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                RabbitMQ Chat
+            </h1>
+            <div id="connectionStatus" class="status hidden">Connected</div>
+        </div>
 
-    <div class="header">
-        Messaging through RabbitMQ
+        <!-- Login Screen -->
+        <div id="loginBox" class="login-screen">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+            <h2>Selamat Datang</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Masukan nama pengguna untuk bergabung ke percakapan.</p>
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 10px;">
+                <input id="usernameInput" placeholder="Nama Pengguna..." onkeyup="if(event.key==='Enter')login()">
+                <button onclick="login()" style="width: 100%;">Masuk Chat</button>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div id="chatUI" class="hidden">
+            <div id="messages" class="messages"></div>
+            <div class="input-area">
+                <input id="messageInput" placeholder="Tulis pesan..." onkeyup="if(event.key==='Enter')sendMessage()">
+                <button onclick="sendMessage()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div id="messages" class="messages">
-        <div class="empty">No messages received yet</div>
-    </div>
+    <script>
+        // Gunakan placeholder jika websocket belum tersedia untuk demo UI
+        let ws;
+        
+        function connectWebSocket() {
 
-    <div class="input-area">
-        <input type="text" id="message" placeholder="Type a message...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+            ws = new WebSocket("ws://localhost:8888/ws");
 
-</div>
+            ws.onopen = () => {
+                document.getElementById('connectionStatus').classList.remove('hidden');
+            };
 
-<script>
-    const ws = new WebSocket("ws://localhost:8888/ws");
+            ws.onmessage = function(event) {
 
-    ws.onmessage = function(event) {
-        const messagesDiv = document.getElementById("messages");
+                const parts = event.data.split(": ");
 
-        const empty = messagesDiv.querySelector(".empty");
-        if (empty) empty.remove();
+                if(parts.length < 2) return;
 
-        const msg = document.createElement("div");
-        msg.classList.add("msg", "incoming");
-        msg.textContent = event.data;
+                const sender = parts[0];
+                const message = parts.slice(1).join(": ");
 
-        messagesDiv.appendChild(msg);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    };
+                renderMessage(sender, message);
+                saveMessage(sender, message);
+            };
 
-    function sendMessage() {
-        const messageInput = document.getElementById("message");
+            ws.onerror = () => console.log("WebSocket error");
 
-        if (!messageInput.value.trim()) return;
+            ws.onclose = () => console.log("WebSocket closed");
 
-        fetch("/send", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: "message=" + encodeURIComponent(messageInput.value)
-        });
+        }
 
-        const messagesDiv = document.getElementById("messages");
+        let currentUser = null;
 
-        const msg = document.createElement("div");
-        msg.classList.add("msg", "outgoing");
-        msg.textContent = messageInput.value;
+        function init() {
+            const storedUser = localStorage.getItem("username");
+            if (storedUser) {
+                currentUser = storedUser;
+                startChat();
+            }
+        }
 
-        messagesDiv.appendChild(msg);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        function login() {
+            const username = document.getElementById("usernameInput").value.trim();
+            if (!username) return;
+            localStorage.setItem("username", username);
+            currentUser = username;
+            startChat();
+        }
 
-        messageInput.value = "";
-    }
-</script>
+        function startChat() {
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("chatUI").classList.remove("hidden");
+            connectWebSocket();
+            loadMessages();
+        }
 
+        function renderMessage(sender, message) {
+            const messagesDiv = document.getElementById("messages");
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("msg-wrapper");
+            
+            const isMe = sender === currentUser;
+            if (isMe) {
+                wrapper.classList.add("outgoing");
+            } else {
+                wrapper.classList.add("incoming");
+                const label = document.createElement("div");
+                label.textContent = sender;
+                label.classList.add("sender-name");
+                wrapper.appendChild(label);
+            }
+
+            const bubble = document.createElement("div");
+            bubble.classList.add("bubble");
+            bubble.textContent = message;
+
+            wrapper.appendChild(bubble);
+            messagesDiv.appendChild(wrapper);
+            
+            // Auto scroll ke bawah
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function saveMessage(sender, message) {
+            let history = JSON.parse(localStorage.getItem("messages") || "[]");
+            history.push({ sender, message });
+            // Batasi history agar tidak terlalu besar
+            if(history.length > 50) history.shift();
+            localStorage.setItem("messages", JSON.stringify(history));
+        }
+
+        function loadMessages() {
+            const history = JSON.parse(localStorage.getItem("messages") || "[]");
+            const messagesDiv = document.getElementById("messages");
+            messagesDiv.innerHTML = ''; // Clear
+            history.forEach(m => renderMessage(m.sender, m.message));
+        }
+
+        if (ws) {
+            ws.onmessage = function(event) {
+                const [sender, message] = event.data.split(": ");
+                renderMessage(sender, message);
+                saveMessage(sender, message);
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Optimistic rendering (tampilkan langsung di UI pengirim)
+            renderMessage(currentUser, text);
+            saveMessage(currentUser, text);
+
+            fetch("/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user: currentUser,
+                    message: text
+                })
+            }).catch(err => console.error("Send failed:", err));
+
+            input.value = "";
+            input.focus();
+        }
+
+        init();
+    </script>
 </body>
 </html>

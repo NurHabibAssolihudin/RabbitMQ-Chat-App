@@ -1,3 +1,5 @@
+import json
+
 import pika
 import threading
 
@@ -30,13 +32,13 @@ def rabbitmq_consumer():
     })
 
     def callback(ch, method, properties, body):
-        message = body.decode()
-        print(f'[x] Received {message}')
+        data: dict = json.loads(body.decode())
+        print(f'[x] Received {data["message"]} from {data["user"]}')
         import asyncio
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         for ws in ws_connections:
-            loop.run_until_complete(ws.send_text(f"{message}"))
+            loop.run_until_complete(ws.send_text(f'{data["user"]}: {data["message"]}'))
 
     channel.basic_consume(
         queue='rabbitmqpy',
