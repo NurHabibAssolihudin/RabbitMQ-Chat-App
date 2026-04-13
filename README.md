@@ -36,15 +36,15 @@ RabbitMQ Chat adalah aplikasi web real-time yang memungkinkan multiple user untu
        │                       │                        │
        └───────────┬───────────┴────────────────────────┘
                    │
-        ┌──────────▼──────────┐
-        │    Receiver         │
-        │    (Port 8888)      │
-        │  WebSocket + RabbitMQ
-        └─────┬────────┬──────┘
-              │        │
-        ┌─────▼─┐  ┌──▼──────────┐
-        │WebSocket  │  RabbitMQ  │
-        │Handler    │   Queue    │
+        ┌──────────▼───────────┐
+        │       Receiver       │
+        │     (Port 8888)      │
+        │ WebSocket + RabbitMQ │
+        └─────┬──────────┬─────┘
+              │          │
+        ┌─────▼────┐  ┌──▼────────┐
+        │WebSocket │  │ RabbitMQ  │
+        │Handler   │  │ Queue     │
         └──────────┘  └───────────┘
 ```
 
@@ -254,14 +254,14 @@ RabbitMQ Chat is a real-time web application that allows multiple users to commu
        └───────────┬───────────┴────────────────────────┘
                    │
         ┌──────────▼──────────┐
-        │    Receiver         │
+        │      Receiver       │
         │    (Port 8888)      │
-        │  WebSocket + RabbitMQ
-        └─────┬────────┬──────┘
-              │        │
-        ┌─────▼─┐  ┌──▼──────────┐
-        │WebSocket  │  RabbitMQ  │
-        │Handler    │   Queue    │
+        │ WebSocket + RabbitMQ│
+        └─────┬──────────┬────┘
+              │          │
+        ┌─────▼────┐  ┌──▼────────┐
+        │WebSocket │  │ RabbitMQ  │
+        │Handler   │  │ Queue     │
         └──────────┘  └───────────┘
 ```
 
